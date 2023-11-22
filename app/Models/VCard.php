@@ -13,6 +13,7 @@ class VCard extends Authenticatable
 {
     use SoftDeletes, HasApiTokens, HasFactory, Notifiable;
 
+    protected $table = 'vcards';
     protected $primaryKey = 'phone_number';
     public $incrementing = false;
     protected $keyType = 'string';

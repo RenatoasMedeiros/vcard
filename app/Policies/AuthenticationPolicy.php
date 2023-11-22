@@ -6,7 +6,7 @@ use App\Models\Authentication;
 
 class AuthenticationPolicy
 {
-    /*
+    
     public function view(Authentication $user, Authentication $model)
     {
         return $user->user_type == "A" || $user->id == $model->id;
@@ -20,5 +20,5 @@ class AuthenticationPolicy
     public function updatePassword(Authentication $user, Authentication $model)
     {
         return $user->id == $model->id;
-    }*/
+    }
 }
