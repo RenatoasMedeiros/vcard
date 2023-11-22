@@ -40,6 +40,10 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        'api' => [
+            'driver' => 'passport',
+            'provider' => 'authentications', // Use the 'view_auth_users' provider for Passport
+        ],
     ],
 
     /*
@@ -62,7 +66,8 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
-            'model' => App\Models\User::class,
+            'model' => App\Models\Authentication::class, // Use the Authentication model
+            #'table' => 'view_auth_users', // Use the correct table name for the view
         ],
 
         // 'users' => [
