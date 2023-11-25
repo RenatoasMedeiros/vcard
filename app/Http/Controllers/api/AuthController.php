@@ -35,13 +35,11 @@ class AuthController extends Controller
                 ->where('username', $username)
                 ->value('id');
 
-                $request['username']=$userId;
-                request()->request->add($this->passportAuthenticationData($userId, $password));
-                // return $request;
-            // return $request;
+            $request['username']=$userId;
+            request()->request->add($this->passportAuthenticationData($userId, $password));
+
             $request = Request::create(env('PASSPORT_SERVER_URL') . '/oauth/token', 'POST' );
             $response = Route::dispatch($request);
-            // return $response;
             $errorCode = $response->getStatusCode();
             $auth_server_response = json_decode((string) $response->content(), true);
             return response()->json($auth_server_response, $errorCode);
@@ -60,29 +58,30 @@ class AuthController extends Controller
             'category_name' => 'required|string',
             'category_type' => 'required|in:D,C',
         ]);
-
+    
         // Create a new VCard
         $vCard = VCard::create([
             'phone_number' => $request->input('phone_number'),
-            'password' => bcrypt($request->input('password')),
-        ]);
-
-        //Isto não funciona porque as tabelas não estão ligadas!
-        $user = User::create([
             'name' => $request->input('name'),
             'email' => $request->input('email'),
             'password' => bcrypt($request->input('password')),
+            'confirmation_code' => bcrypt($request->input('password')),
+            'updated_at' => now(),
+            'max_debit' => '5000',
+            'blocked' => 0,
+
         ]);
-
-        $vCard->user()->associate($user);
-
+    
+        // Create a new category
         $category = Category::create([
             'name' => $request->input('category_name'),
             'type' => $request->input('category_type'),
+            'vcard' => $request->input('phone_number'),
         ]);
-
+    
+        // Associate the category with the VCard
         $vCard->categories()->save($category);
-
+    
         return response()->json(['message' => 'VCard registered successfully']);
     }
 

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Category extends Model
 {
     use SoftDeletes;
-
+    public $timestamps = false;
     protected $fillable = [
         'vcard',
         'type',
