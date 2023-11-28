@@ -5,15 +5,15 @@
 namespace App\Models;
 
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Contracts\Auth\UserProvider;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\HasApiTokens;
 
 class Authentication extends Model implements Authenticatable
 {
-
-    use Notifiable;#, HasApiTokens;
-    protected $table = 'view_auth_users'; // Set the table name for the view
+    use Notifiable, HasApiTokens;
+    protected $table = 'view_auth_users'; // Set the table name for the \view
 
     // protected $primaryKey = 'id'; // Set the primary key for the view
 
@@ -57,4 +57,6 @@ class Authentication extends Model implements Authenticatable
     public function findForPassport($username) {
         return $this->where('id', $username)->first();
     }
+
+    
 }

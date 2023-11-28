@@ -18,7 +18,7 @@ class AuthenticationResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'user_type' => $this->user_type,
+            //'user_type' => $this->user_type,
             'username' => $this->username,
             // Add other fields as needed
         ];

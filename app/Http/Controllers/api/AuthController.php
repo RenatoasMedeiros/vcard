@@ -98,7 +98,9 @@ class AuthController extends Controller
 
     
     public function show_me(Request $request)
-{
-    return new AuthenticationResource($request->user());
-}
+    {
+        \Log::info('\nRequest data:', $request->all());
+
+        return new AuthenticationResource($request->user());
+    }
 }
