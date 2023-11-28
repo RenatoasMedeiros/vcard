@@ -9,6 +9,9 @@ class Transaction extends Model
 {
     use SoftDeletes;
 
+    protected $touches = ['vCard']; // This ensures that the vCard's timestamp is also updated when a related transaction is created
+
+    
     protected $fillable = [
         'vcard',
         'date',
@@ -26,6 +29,16 @@ class Transaction extends Model
         'custom_options',
         'custom_data',
     ];
+    
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($transaction) {
+            $transaction->date = now()->toDateString();
+            $transaction->datetime = now();
+        });
+    }
 
     public function vCard()
     {

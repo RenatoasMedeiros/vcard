@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\api\AuthController;
+use App\Http\Controllers\api\TransactionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,8 +21,19 @@ Route::post('register', [AuthController::class, 'register']);
 
 Route::middleware('auth:api')->group(function () {
     Route::post('logout', [AuthController::class, 'logout']);
+    // routes/api.php
+    // Transactions routes
+    
 });
 
+Route::prefix('transactions')->group(function () {
+    Route::post('/', [TransactionController::class, 'store']);
+    Route::get('/', [TransactionController::class, 'index']);
+    Route::get('/{id}', [TransactionController::class, 'show']);
+    Route::put('/{id}', [TransactionController::class, 'update']);
+    Route::delete('/{id}', [TransactionController::class, 'destroy']);
+    Route::get('/{vcardPhoneNumber}', [TransactionController::class, 'getTransactionsForVCard']);
+});
 
 
 // CÓDIGO EXEMPLO
