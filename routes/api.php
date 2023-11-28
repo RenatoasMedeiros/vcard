@@ -21,10 +21,9 @@ Route::post('register', [AuthController::class, 'register']);
 
 Route::middleware('auth:api')->group(function () {
     Route::post('logout', [AuthController::class, 'logout']);
-    // routes/api.php
-    // Transactions routes
-    
+    Route::get('vcard/me', [AuthController::class, 'show_me']);
 });
+
 
 Route::prefix('transactions')->group(function () {
     Route::post('/', [TransactionController::class, 'store']);
@@ -32,9 +31,8 @@ Route::prefix('transactions')->group(function () {
     Route::get('/{id}', [TransactionController::class, 'show']);
     Route::put('/{id}', [TransactionController::class, 'update']);
     Route::delete('/{id}', [TransactionController::class, 'destroy']);
-    Route::get('/{vcardPhoneNumber}', [TransactionController::class, 'getTransactionsForVCard']);
+    Route::get('/vcard/{vcardPhoneNumber}', [TransactionController::class, 'getTransactionsForVCard']);
 });
-
 
 // CÓDIGO EXEMPLO
 /*

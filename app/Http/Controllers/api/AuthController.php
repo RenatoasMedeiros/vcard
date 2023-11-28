@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\VCard;
 use App\Models\User;
 use App\Models\Category;
+use App\Http\Resources\AuthenticationResource;
+
 
 class AuthController extends Controller
 {
@@ -94,9 +96,9 @@ class AuthController extends Controller
         return response(['msg' => 'Token revoked'], 200);
     }
 
-    /*
+    
     public function show_me(Request $request)
-    {
-        return new UserResource($request->user());
-    }*/
+{
+    return new AuthenticationResource($request->user());
+}
 }

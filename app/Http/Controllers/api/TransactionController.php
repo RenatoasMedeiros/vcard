@@ -69,6 +69,8 @@ class TransactionController extends Controller
             $transaction->save();
         }
 
+        
+
         // Find the sender's VCard
         $senderVCard = VCard::findOrFail($request->input('vcard'));
 

@@ -24,7 +24,6 @@ class Transaction extends Model
         'payment_reference',
         'pair_transaction',
         'pair_vcard',
-        'category_id',
         'description',
         'custom_options',
         'custom_data',
@@ -49,5 +48,12 @@ class Transaction extends Model
     {
         return $this->hasOne(Transaction::class, 'id', 'pair_transaction');
     }
+
+    // Add this relationship to link a transaction to a category
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
+
 
 }
