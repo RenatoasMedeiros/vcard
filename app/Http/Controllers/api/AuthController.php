@@ -88,9 +88,9 @@ class AuthController extends Controller
             'password' => bcrypt($request->input('password')),
             'confirmation_code' => bcrypt($request->input('password')),
             'updated_at' => now(),
-            'pin' => $request->input('pin'),
             'max_debit' => '5000',
             'blocked' => 0,
+            'pin' => $request->input('pin'),
 
         ]);
     
