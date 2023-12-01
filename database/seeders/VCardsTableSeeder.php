@@ -148,7 +148,7 @@ class VCardsTableSeeder extends Seeder
             'password' => bcrypt('123'),
             'confirmation_code' => bcrypt('123'),
             //TAES - PIN
-            'pin' => bcrypt('1234'),
+            'pin' => '1234',
             'blocked' => $blocked,
             'balance' => 0,
             'max_debit' => $max_debit,

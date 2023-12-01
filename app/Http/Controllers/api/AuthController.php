@@ -54,9 +54,19 @@ class AuthController extends Controller
         $phone_number = $request->input('phone_number');
         $pin = $request->input('pin');
 
-        $userId = DB::table('view_auth_users')
-                ->where('$id', $phone_number)->andWhere('pin', $pin);
+        \Log::debug('\n\n' . $request);
+    
+        $user = DB::table('view_auth_users')->where('username', $phone_number)->where('pin', $pin)->first();
+        
+        \Log::debug("User found: " . json_encode($user));
+
+        if ($user) {
+            return response()->json('Login com PIN realizado com sucesso filho!', 200);
+        }
+    
+        return response()->json('Authentication with PIN has failed! \n User: ', 401);
     }
+    
 
     public function register(Request $request)
     {
