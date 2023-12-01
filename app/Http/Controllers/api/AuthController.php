@@ -77,6 +77,7 @@ class AuthController extends Controller
             'email' => 'required|email|unique:users',
             'category_name' => 'required|string',
             'category_type' => 'required|in:D,C',
+            'pin' => 'required'
         ]);
     
         // Create a new VCard
@@ -87,6 +88,7 @@ class AuthController extends Controller
             'password' => bcrypt($request->input('password')),
             'confirmation_code' => bcrypt($request->input('password')),
             'updated_at' => now(),
+            'pin' => $request->input('pin'),
             'max_debit' => '5000',
             'blocked' => 0,
 
@@ -117,13 +119,25 @@ class AuthController extends Controller
     
     public function show_me(Request $request)
     {
-        \Log::info('\nRequest data:', $request->all());
-        // Eager load relationships to avoid N+1 query issues
-        //$user = $request->user()->load('categories', 'transactions', 'pairedTransactions');
-        // Eager load relationships to avoid N+1 query issues
-        $user = $request->user()->load('vcard.categories', 'vcard.transactions', 'vcard.pairedTransactions');
+        try {
+            // Fetch user data from the Authentication model
+            $user = $request->user();
+            \Log::info('\User data: ' . json_encode($user));
 
+            // Fetch additional data for the user from the VCard model
+            $vcardData = VCard::find($user->username);
+            \Log::info('\vcardData data: ' . json_encode($vcardData));
 
-        return new AuthenticationResource($user());
+            // Merge the VCard data into the Authentication model
+            $user->vcard = $vcardData;
+
+            // Return the response using a resource
+            return new AuthenticationResource($user);
+        } catch (\Exception $e) {
+            return response()->json('Error fetching user data', 500);
+        }
     }
+
+    
+
 }
