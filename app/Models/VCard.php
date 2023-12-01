@@ -9,7 +9,7 @@ use Laravel\Passport\HasApiTokens;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
 
-class VCard extends Authenticatable
+class VCard extends model implements Authenticatable
 {
     use SoftDeletes, HasApiTokens, HasFactory, Notifiable;
 
@@ -31,6 +31,13 @@ class VCard extends Authenticatable
         'custom_options',
         'custom_data',
     ];
+
+    protected $casts = [
+        'balance' => 'float', // Change to the actual type
+        'max_debit' => 'float', // Change to the actual type
+        // Add other fields as needed
+    ];
+    
 
     public function transactions()
     {

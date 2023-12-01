@@ -5,6 +5,7 @@
 /public/storage
 /storage/*.key
 /vendor
+!/vendor/laravel/framework/src/illuminate/foundation/Auth/VCard.php
 .env
 .env.backup
 .env.production

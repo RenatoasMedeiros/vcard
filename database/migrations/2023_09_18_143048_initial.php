@@ -38,6 +38,9 @@ return new class extends Migration
             $table->string('password');
             $table->string('confirmation_code');
 
+            //TAES - PIN
+            $table->string('pin');
+
             // vCard valid date and status
             // Transactions are only allowed if blocked = false and current date <= valid_date
             $table->boolean('blocked', false);

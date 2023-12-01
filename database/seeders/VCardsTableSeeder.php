@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class VCardsTableSeeder extends Seeder
 {
@@ -107,7 +108,11 @@ class VCardsTableSeeder extends Seeder
                 return '##########';
         }
     }
-
+    
+    private function generatePinToken()
+    {
+        return hash('sha256', Str::random(60));
+    }
 
     private function newFakeVCard($faker, $fixedPhone = 0, $created_date = null)
     {
@@ -142,6 +147,8 @@ class VCardsTableSeeder extends Seeder
             'photo_url' => $gender,
             'password' => bcrypt('123'),
             'confirmation_code' => bcrypt('123'),
+            //TAES - PIN
+            'pin' => bcrypt('1234'),
             'blocked' => $blocked,
             'balance' => 0,
             'max_debit' => $max_debit,
@@ -152,6 +159,7 @@ class VCardsTableSeeder extends Seeder
             'deleted_at' => $deletedAt
         ];
     }
+
     private function insertOneVCard($vCard)
     {
         DB::table('vcards')->insert($vCard);
@@ -543,4 +551,3 @@ class VCardsTableSeeder extends Seeder
         $this->updateBalaces();
     }
 }
-

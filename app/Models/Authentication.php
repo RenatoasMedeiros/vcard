@@ -26,9 +26,9 @@ class Authentication extends Model implements Authenticatable
         'name', 
         'email', 
         'blocked', 
-        'confirmation_code', 
-        #'photo_url', 
-        #'deleted_at'
+        'confirmation_code',
+        'photo_url', 
+        'deleted_at',
     ];
 
     protected $hidden = [
@@ -58,5 +58,9 @@ class Authentication extends Model implements Authenticatable
         return $this->where('id', $username)->first();
     }
 
+    public function vcard()
+    {
+        return $this->hasOne(VCard::class, 'phone_number', 'username');
+    }
     
 }

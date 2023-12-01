@@ -50,6 +50,14 @@ class AuthController extends Controller
         }
     }
 
+    public function loginPIN(Request $request) {
+        $phone_number = $request->input('phone_number');
+        $pin = $request->input('pin');
+
+        $userId = DB::table('view_auth_users')
+                ->where('$id', $phone_number)->andWhere('pin', $pin);
+    }
+
     public function register(Request $request)
     {
         $request->validate([
@@ -100,7 +108,12 @@ class AuthController extends Controller
     public function show_me(Request $request)
     {
         \Log::info('\nRequest data:', $request->all());
+        // Eager load relationships to avoid N+1 query issues
+        //$user = $request->user()->load('categories', 'transactions', 'pairedTransactions');
+        // Eager load relationships to avoid N+1 query issues
+        $user = $request->user()->load('vcard.categories', 'vcard.transactions', 'vcard.pairedTransactions');
 
-        return new AuthenticationResource($request->user());
+
+        return new AuthenticationResource($user());
     }
 }
