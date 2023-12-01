@@ -9,7 +9,7 @@ use Laravel\Passport\HasApiTokens;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
 
-class VCard extends model implements Authenticatable
+class VCard extends model //implements Authenticatable
 {
     use SoftDeletes, HasApiTokens, HasFactory, Notifiable;
 
