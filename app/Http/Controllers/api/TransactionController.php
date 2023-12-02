@@ -19,7 +19,6 @@ class TransactionController extends Controller
             'vcard' => 'required|string|exists:vcards,phone_number',
             'date' => 'required|date',
             'datetime' => 'required|date',
-            'type' => 'required|in:C,D',
             'value' => [
                 'required',
                 'numeric',
@@ -29,15 +28,16 @@ class TransactionController extends Controller
                     if ($value <= 0) {
                         $fail("The $attribute must be greater than zero.");
                     }
-            
-                    // // Check if it's a debit transaction, is that needeed?
+
+                    // Check if it's a debit transaction, is that needed?
                     if ($request->input('type') === 'D') {
                         // Check if the value is less than or equal to the vCard balance
                         $vcard = VCard::where('phone_number', $request->input('vcard'))->first();
+                        \Log::info('\n vcard data: ' . json_encode($vcard));
                         if ($value > $vcard->balance) {
                             $fail("The $attribute must be less than or equal to the vCard balance.");
                         }
-            
+
                         // Check if the value is less than or equal to the maximum debit limit
                         if ($value > $vcard->max_debit) {
                             $fail("The $attribute must be less than or equal to the maximum debit limit.");
@@ -45,52 +45,90 @@ class TransactionController extends Controller
                     }
                 },
             ],
-            'old_balance' => 'required|numeric',
-            'new_balance' => 'required|numeric',
             'payment_type' => 'required|in:VCARD,MBWAY,PAYPAL,IBAN,MB,VISA',
             'payment_reference' => 'required|string',
-            'pair_transaction' => 'nullable|exists:transactions,id',
             'pair_vcard' => 'nullable|string|exists:vcards,phone_number',
-            'category_id' => 'nullable|exists:categories,id', //rever esta parte
+            'category_id' => 'nullable|exists:categories,id',
             'description' => 'nullable|string',
             'custom_options' => 'nullable|json',
             'custom_data' => 'nullable|json',
         ]);
-    
+
         if ($validator->fails()) {
             return response()->json(['error' => $validator->errors()], 400);
         }
-        
-        $transaction = Transaction::create($request->all());
 
-        if ($request->has('category_id')) {
-            $category = Category::findOrFail($request->input('category_id'));
-            $transaction->category()->associate($category);
-            $transaction->save();
-        }
+        $transactionData = [
+            'vcard' => $request->input('vcard'),
+            'date' => $request->input('date'),
+            'datetime' => $request->input('datetime'),
+            'type' => 'D',
+            'value' => $request->input('value'),
+            'old_balance' => '0', // temporary
+            'new_balance' => '0',
+            'payment_type' => $request->input('payment_type'),
+            'payment_reference' => $request->input('payment_reference'),
+            'pair_transaction' => '1', //temporary
+            'pair_vcard' => $request->input('pair_vcard'),
+            'category_id' => $request->input('category_id'),
+            'description' => $request->input('description'),
+            'custom_options' => $request->input('custom_options'),
+            'custom_data' => $request->input('custom_data'),
+        ];
 
-        
+        // Create the debit transaction (source VCard)
+        $debitTransaction = Transaction::create($transactionData);
+        $debitTransaction->update([
+            'pair_transaction' => $debitTransaction->id
+        ]);
 
         // Find the sender's VCard
         $senderVCard = VCard::findOrFail($request->input('vcard'));
 
-        // Find the receiver's VCard (if applicable)
-        $receiverVCard = $request->has('pair_card') ? VCard::findOrFail($request->input('pair_card')) : null;
-
-        // Create the transaction
-        $transaction = Transaction::create($request->all());
+        // Calculate the old balance of the sender's VCard
+        $oldBalance = $senderVCard->balance;
 
         // Update sender's VCard balance for debit
-        if ($request->input('type') === 'D') {
-            $senderVCard->update(['balance' => $senderVCard->balance - $request->input('value')]);
-        }
-        
-        // Update receiver's VCard balance for credit
-        if ($receiverVCard && $request->input('type') === 'C') {
+        \Log::info('\n sender balance before update: ' . json_encode($senderVCard));
+        $senderVCard->update(['balance' => $senderVCard->balance - $request->input('value')]);
+        \Log::info('\n sender balance after update: ' . json_encode($senderVCard));
+
+        // Update the debit transaction with the old and new balance of the sender
+        $debitTransaction->update([
+            'old_balance' => $oldBalance,
+            'new_balance' => $senderVCard->balance,
+        ]);
+
+        $hasPair_vcard = $request->has('pair_vcard');
+
+        if ($hasPair_vcard == "null") $hasPair_vcard = 0;  
+
+        // If there is a paired vCard, create the credit transaction (destination VCard)
+        if ($hasPair_vcard) {
+            \Log::info('\n Has a pair_card: ' . json_encode($hasPair_vcard));
+            \Log::info('\n Has a pair_card: ' . $hasPair_vcard);
+            $creditTransactionData = $transactionData;
+            $creditTransactionData['vcard'] = $request->input('pair_vcard');
+            $creditTransactionData['type'] = 'C';
+
+            $creditTransaction = Transaction::create($creditTransactionData);
+            
+            $creditTransaction->update([
+                'pair_transaction' => $debitTransaction->id
+            ]);
+            // Find the receiver's VCard
+            $receiverVCard = VCard::findOrFail($request->input('pair_vcard'));
+
+            // Update receiver's VCard balance for credit
+            \Log::info('\n receiverVCard balance before update: ' . json_encode($receiverVCard));
             $receiverVCard->update(['balance' => $receiverVCard->balance + $request->input('value')]);
+            \Log::info('\n receiverVCard balance after update: ' . json_encode($receiverVCard));
+
+            // Update the credit transaction with the new balance of the receiver
+            $creditTransaction->update(['new_balance' => $receiverVCard->balance]);
         }
 
-        return response()->json(['message' => 'Transaction created successfully', 'data' => $transaction]);
+        return response()->json(['message' => 'Transactions created successfully', 'debitTransaction' => $debitTransaction]);
     }
 
     public function index()
