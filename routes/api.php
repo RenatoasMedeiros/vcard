@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\api\AuthController;
 use App\Http\Controllers\api\TransactionController;
+use App\Http\Controllers\api\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,7 +26,6 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/loginPin', [AuthController::class, 'loginPIN']);
 });
 
-
 Route::prefix('transactions')->group(function () {
     Route::post('/', [TransactionController::class, 'store']);
     Route::get('/', [TransactionController::class, 'index']);
@@ -33,6 +33,8 @@ Route::prefix('transactions')->group(function () {
     Route::put('/{id}', [TransactionController::class, 'update']);
     Route::delete('/{id}', [TransactionController::class, 'destroy']);
     Route::get('/vcard/{vcardPhoneNumber}', [TransactionController::class, 'getTransactionsForVCard']);
+    Route::get('/vcard/{vcardPhoneNumber}/phone-number-transactions', [TransactionController::class, 'getPhoneNumberTransactionsForVCard']);
+    Route::get('/vcard/{vcardPhoneNumber}/recent-transactions', [TransactionController::class, 'getRecentTransactions']);
 });
 
 // CÓDIGO EXEMPLO
