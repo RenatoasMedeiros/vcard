@@ -30,6 +30,7 @@ class VCard extends model //implements Authenticatable
         'max_debit',
         'custom_options',
         'custom_data',
+        'pin'
     ];
 
     protected $casts = [
