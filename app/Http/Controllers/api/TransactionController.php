@@ -128,7 +128,7 @@ class TransactionController extends Controller
             $creditTransaction->update(['new_balance' => $receiverVCard->balance]);
         }
 
-        return response()->json(['message' => 'Transactions created successfully', 'debitTransaction' => $debitTransaction]);
+        return response()->json(['message' => 'Transactions created successfully', 'debitTransaction' => $debitTransaction], 201);
     }
 
     public function index()
