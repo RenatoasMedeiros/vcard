@@ -31,12 +31,12 @@ Route::middleware('auth:api')->group(function () {
         Route::put('/{id}', [TransactionController::class, 'update']);
         Route::delete('/{id}', [TransactionController::class, 'destroy']);
         Route::get('/vcard/{vcardPhoneNumber}', [TransactionController::class, 'getTransactionsForVCard']);
+        Route::get('/vcard/{vcardPhoneNumber}/phone-number-transactions', [TransactionController::class, 'getPhoneNumberTransactionsForVCard']);
+        Route::get('/vcard/{vcardPhoneNumber}/recent-transactions', [TransactionController::class, 'getRecentTransactions']);
     });
     Route::post('/piggyBank/deposit', [VCardController::class, 'deposit']);
     Route::post('/piggyBank/withdraw', [VCardController::class, 'withdraw']);
 });
-
-
 
 // CÓDIGO EXEMPLO
 /*
