@@ -147,8 +147,9 @@ class VCardsTableSeeder extends Seeder
             'photo_url' => $gender,
             'password' => bcrypt('123'),
             'confirmation_code' => bcrypt('123'),
-            //TAES - PIN
+            //TAES - PIN PIGGYBANK
             'pin' => '1234',
+            'piggy_bank' => 0,
             'blocked' => $blocked,
             'balance' => 0,
             'max_debit' => $max_debit,
