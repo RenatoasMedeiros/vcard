@@ -91,6 +91,7 @@ class AuthController extends Controller
             'max_debit' => '5000',
             'blocked' => 0,
             'pin' => $request->input('pin'),
+            'piggy_bank' => '0'
 
         ]);
     

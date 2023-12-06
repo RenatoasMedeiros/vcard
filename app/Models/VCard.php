@@ -30,13 +30,14 @@ class VCard extends model //implements Authenticatable
         'max_debit',
         'custom_options',
         'custom_data',
-        'pin'
+        'pin',
+        'piggy_bank'
     ];
 
     protected $casts = [
         'balance' => 'float', // Change to the actual type
         'max_debit' => 'float', // Change to the actual type
-        // Add other fields as needed
+        'piggy_bank' => 'float',
     ];
     
 
