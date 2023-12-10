@@ -26,6 +26,7 @@ class AuthenticationResource extends JsonResource
             'blocked' => $this->blocked,
             'balance' => optional($this->vcard)->balance, // Access the balance from the vcard relationship
             'max_debit' => optional($this->vcard)->max_debit, // Access the max_debit from the vcard relationship
+            'piggy_bank' => optional($this->vcard)->piggy_bank, // Access the piggy_bank from the vcard relationship
             'custom_options' => optional($this->vcard)->custom_options,
             'custom_data' => optional($this->vcard)->custom_data
         ];
