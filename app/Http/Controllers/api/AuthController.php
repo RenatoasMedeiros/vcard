@@ -51,7 +51,7 @@ class AuthController extends Controller
     }
 
     public function loginPIN(Request $request) {
-        $phone_number = $request->input('phone_number');
+        $phone_number = $request->input('username');
         $pin = $request->input('pin');
 
         \Log::debug('\n\n' . $request);
@@ -61,7 +61,7 @@ class AuthController extends Controller
         \Log::debug("User found: " . json_encode($user));
 
         if ($user) {
-            return response()->json('Login com PIN realizado com sucesso filho!', 200);
+            return response()->json('Login com PIN realizado com sucesso!', 200);
         }
     
         return response()->json('Authentication with PIN has failed! \n User: ', 401);
