@@ -101,7 +101,7 @@ class TransactionController extends Controller
 
         $hasPair_vcard = $request->has('pair_vcard');
 
-        if ($hasPair_vcard == "null") $hasPair_vcard = 0;  
+        if ($hasPair_vcard == "null") $hasPair_vcard = 0;
 
         // If there is a paired vCard, create the credit transaction (destination VCard)
         if ($hasPair_vcard) {
@@ -112,7 +112,7 @@ class TransactionController extends Controller
             $creditTransactionData['type'] = 'C';
 
             $creditTransaction = Transaction::create($creditTransactionData);
-            
+
             $creditTransaction->update([
                 'pair_transaction' => $debitTransaction->id
             ]);
@@ -128,7 +128,7 @@ class TransactionController extends Controller
             $creditTransaction->update(['new_balance' => $receiverVCard->balance]);
         }
 
-        return response()->json(['message' => 'Transactions created successfully', 'debitTransaction' => $debitTransaction]);
+        return response()->json(['message' => 'Transactions created successfully', 'debitTransaction' => $debitTransaction], 201);
     }
 
     public function index()
@@ -181,5 +181,72 @@ class TransactionController extends Controller
         return response()->json(['data' => $transactions]);
     }
 
+    public function getPhoneNumberTransactionsForVCard($vcardPhoneNumber)
+    {
+        // Find the vCard
+        $vcard = VCard::where('phone_number', $vcardPhoneNumber)->first();
 
+        if (!$vcard) {
+            return response()->json(['error' => 'vCard not found'], 404);
+        }
+
+        // Retrieve paginated transactions associated with the vCard
+        $phoneNumberTransactions = Transaction::where('vcard', $vcardPhoneNumber)
+            ->whereRaw("LENGTH(payment_reference) = 9 AND payment_reference REGEXP '^[0-9]+$'")
+            ->paginate(10);
+
+        // Get the associated vCard name for each transaction
+        $phoneNumberTransactions = $phoneNumberTransactions->map(function ($transaction) {
+            // Find the vCard with the payment_reference
+            $associatedVCard = VCard::where('phone_number', $transaction->payment_reference)->first();
+
+            // If found, add the 'associatedVCard' field to the transaction
+            if ($associatedVCard) {
+                $transaction->associatedVCard = $associatedVCard->name;
+            } else {
+                $transaction->associatedVCard = null;
+            }
+
+            return $transaction;
+        });
+
+        return response()->json(['data' => $phoneNumberTransactions]);
+    }
+
+    public function getRecentTransactions($vcardPhoneNumber)
+    {
+        // Find the vCard
+        $vcard = VCard::where('phone_number', $vcardPhoneNumber)->first();
+
+        if (!$vcard) {
+            return response()->json(['error' => 'vCard not found'], 404);
+        }
+
+        $sevenDaysAgo = now()->subDays(7);
+
+        // Retrieve paginated transactions associated with the vCard
+        $phoneNumberTransactions = Transaction::where('vcard', $vcardPhoneNumber)
+            ->where('date', '>=', $sevenDaysAgo)
+            ->whereRaw("LENGTH(payment_reference) = 9 AND payment_reference REGEXP '^[0-9]+$'")
+            ->paginate(10);
+
+        // Get the associated vCard name for each transaction
+        $phoneNumberTransactions = $phoneNumberTransactions->map(function ($transaction) {
+            // Find the vCard with the payment_reference
+            $associatedVCard = VCard::where('phone_number', $transaction->payment_reference)->first();
+
+            // If found, add the 'associatedVCard' field to the transaction
+            if ($associatedVCard) {
+                $transaction->associatedVCard = $associatedVCard->name;
+            } else {
+                $transaction->associatedVCard = null;
+            }
+
+            return $transaction;
+        });
+
+        \Log::info('\n receiverVCard balance after update: ' . json_encode($phoneNumberTransactions));
+
+        return response()->json(['data' => $phoneNumberTransactions]);
+    }
 }
