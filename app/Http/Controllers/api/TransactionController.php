@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\api\VCardController;
 use Illuminate\Http\Request;
 use App\Models\Transaction;
 use App\Models\Category;
@@ -72,7 +73,7 @@ class TransactionController extends Controller
             'pair_vcard' => $request->input('pair_vcard'),
             'category_id' => $request->input('category_id'),
             'description' => $request->input('description'),
-            'custom_options' => $request->input('custom_options'),
+            'custom_options' => $request->input('custom_options'), //?? [], // Directly provide the array value,
             'custom_data' => $request->input('custom_data'),
         ];
 
@@ -100,13 +101,16 @@ class TransactionController extends Controller
         ]);
 
         $hasPair_vcard = $request->has('pair_vcard');
+        \Log::info('\n Has a pair_card: ' . json_encode($hasPair_vcard));
 
-        if ($hasPair_vcard == "null") $hasPair_vcard = 0;
+        //Here
+        //if ($hasPair_vcard == "null") $hasPair_vcard = 0;
+
+        \Log::info('\n Has a pair_card: ' . json_encode($hasPair_vcard));
 
         // If there is a paired vCard, create the credit transaction (destination VCard)
         if ($hasPair_vcard) {
             \Log::info('\n Has a pair_card: ' . json_encode($hasPair_vcard));
-            \Log::info('\n Has a pair_card: ' . $hasPair_vcard);
             $creditTransactionData = $transactionData;
             $creditTransactionData['vcard'] = $request->input('pair_vcard');
             $creditTransactionData['type'] = 'C';
@@ -118,6 +122,22 @@ class TransactionController extends Controller
             ]);
             // Find the receiver's VCard
             $receiverVCard = VCard::findOrFail($request->input('pair_vcard'));
+            
+            // // Check if piggy_setting is "piggysaves: 1" and the value is not an integer
+            // if ($request->input('custom_options') === 'piggysaves: 1' && (double)$request->input('value') != (int)$request->input('value')) {
+            //     $valueToAddOnPiggyBank = (double)$request->input('value') - (int)$request->input('value');
+            //     \Log::info('\n $valueToAddOnPiggyBank : ' . json_encode($valueToAddOnPiggyBank));
+            //     \Log::info('\n $valueToAddOnPiggyBank : ' . $valueToAddOnPiggyBank);
+
+            //     $vCardController = app(VCardController::class);
+
+            //     $result = $vCardController->deposit($request->merge([
+            //         'amount' => $valueToAddOnPiggyBank,
+            //         'phone_number' => $request->input('pair_vcard'),
+            //     ]));
+            //     \Log::info('\n Result of the piggy bank transaction : ' . json_encode($result));
+            //     \Log::info('\n Result of the piggy bank transaction : ' . $result);
+            // }
 
             // Update receiver's VCard balance for credit
             \Log::info('\n receiverVCard balance before update: ' . json_encode($receiverVCard));
@@ -128,7 +148,8 @@ class TransactionController extends Controller
             $creditTransaction->update(['new_balance' => $receiverVCard->balance]);
         }
 
-        return response()->json(['message' => 'Transactions created successfully', 'debitTransaction' => $debitTransaction], 201);
+        //return response()->json(['message' => 'Transactions created successfully', 'debitTransaction' => $debitTransaction, 'creditTransaction' => $creditTransaction], 201);
+        return response()->json(['message' => 'Transactions created successfully'], 201);
     }
 
     public function index()
