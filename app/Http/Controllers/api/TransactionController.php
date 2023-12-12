@@ -133,7 +133,7 @@ class TransactionController extends Controller
                 // }
 
             }
-            return response()->json(['message' => 'Transactions created successfully (to a VCARD user)'], 201);
+            return response()->json(['message' => 'Transactions created successfully (to a VCARD user)', 'debitTransaction' => $debitTransaction], 201);
         }
         // Code for non VCARD users
         $transaction = Transaction::create($transactionData);
