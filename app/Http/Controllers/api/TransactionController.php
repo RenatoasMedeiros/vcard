@@ -67,6 +67,7 @@ class TransactionController extends Controller
         //\Log::info('\n sender balance before update: ' . json_encode($senderVCard));
 
         // Perform the balance deduction if it's a debit transaction
+        \Log::info('\n Is a D trasaction!: ' . json_encode($request->input('type')));
         if ($request->input('type') === 'D') {
             // Update sender's VCard balance for debit
             $senderVCard = VCard::findOrFail($request->input('vcard'));
@@ -99,16 +100,21 @@ class TransactionController extends Controller
                 $creditTransactionData['pair_vcard'] = $request->input('vcard');
                 $creditTransactionData['type'] = 'C';
                 $receiverVCard = VCard::findOrFail($request->input('pair_vcard'));
+                \Log::info('\n\n\n $receiverVCard: ' . json_encode($receiverVCard));
                 $oldBalance = $receiverVCard->balance;
-                #
-
+                \Log::info('\n Credit OLD BALANCE DATA: ' . json_encode($oldBalance));
+                
                 $creditTransaction = Transaction::create($creditTransactionData);
+                // Deduct the value from the sender's balance
+                $receiverVCard->update(['balance' => $receiverVCard->balance + $value]);
 
                 $creditTransaction->update([
                     'pair_transaction' => $debitTransaction->id,
                     'old_balance' => $oldBalance,
                     'new_balance' => $receiverVCard->balance,
                 ]);
+                \Log::info('\n Credit NEW BALANCE DATA: ' . json_encode($receiverVCard->balance));
+                \Log::info('\n Credit Transaciton (AFTER UPDATE): ' . json_encode($creditTransaction));
                 
                 // // Check if piggy_setting is "piggysaves: 1" and the value is not an integer
                 // if ($request->input('custom_options') === 'piggysaves: 1' && (double)$request->input('value') != (int)$request->input('value')) {
