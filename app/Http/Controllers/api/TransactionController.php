@@ -98,6 +98,8 @@ class TransactionController extends Controller
                 //$creditTransactionData['vcard'] = $request->input('pair_vcard');
                 //$creditTransactionData['payment_reference'] = $request->input('vcard');
                 $creditTransactionData['vcard'] = $request->input('pair_vcard');
+                $creditTransactionData['payment_reference'] = $request->input('vcard');
+                $creditTransactionData['pair_vcard'] = $request->input('vcard');
                 $creditTransactionData['type'] = 'C';
                 $receiverVCard = VCard::findOrFail($request->input('pair_vcard'));
                 \Log::info('\n\n\n $receiverVCard: ' . json_encode($receiverVCard));
