@@ -27,7 +27,7 @@ class AuthController extends Controller
         ];
     }
  
-    public function login(Request $request)
+    public function loginvCard(Request $request)
     {
         try {
             $username = $request->input('username');
@@ -47,6 +47,30 @@ class AuthController extends Controller
             return response()->json($auth_server_response, $errorCode);
         } catch (\Exception $e) {
             return response()->json('Authentication has failed!', 401);
+        }
+    }
+
+    public function loginAdmin(Request $request)
+    {
+        try {
+            $username = $request->input('username');
+            $password = $request->input('password');
+
+            $userEmail = DB::table('view_auth_users')->where('email', $username)->value('email');
+            \Log::info('$userEmail: ' . json_encode($userEmail));
+            $request['username']=$userEmail;
+            
+            request()->request->add($this->passportAuthenticationData($userEmail, $password));
+            
+            $request = Request::create(env('PASSPORT_SERVER_URL') . '/oauth/token', 'POST' );
+            \Log::info('$request: ' . json_encode($request));
+            $response = Route::dispatch($request);
+            \Log::info('$response: ' . json_encode($response));
+            $errorCode = $response->getStatusCode();
+            $auth_server_response = json_decode((string) $response->content(), true);
+            return response()->json($auth_server_response, $errorCode);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Authentication with Admin account has failed!', 'exception' => $e->getMessage()], 401);
         }
     }
 

@@ -17,7 +17,8 @@ use App\Http\Controllers\api\VCardController;
 |
 */
 
-Route::post('login', [AuthController::class, 'login']);
+Route::post('login', [AuthController::class, 'loginvCard']);
+Route::post('loginAdmin', [AuthController::class, 'loginAdmin']);
 Route::post('register', [AuthController::class, 'register']);
 
 Route::middleware('auth:api')->group(function () {

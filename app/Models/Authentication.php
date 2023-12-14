@@ -54,13 +54,28 @@ class Authentication extends Model implements Authenticatable
     public function getRememberTokenName() { //implement if needed
     }
 
-    public function findForPassport($username) {
-        return $this->where('id', $username)->first();
+    public function findForPassport($username)
+    {
+        $userType = $this->where('username', $username)->value('user_type');
+
+        if ($userType === 'V') {
+            return $this->where('id', $username)->first();
+        } elseif ($userType === 'A') {
+            return $this->where('email', $username)->first();
+        }
+
+        return null; // Handle other user types if needed
     }
+
 
     public function vcard()
     {
         return $this->hasOne(VCard::class, 'phone_number', 'username');
+    }
+
+    public function user()
+    {
+        return $this->hasOne(User::class, 'email', 'username');
     }
     
 }
