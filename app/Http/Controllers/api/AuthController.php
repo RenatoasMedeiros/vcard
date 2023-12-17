@@ -200,8 +200,12 @@ class AuthController extends Controller
                 $vcardData = VCard::find($user->username);
                 \Log::info('\vcardData data: ' . json_encode($vcardData));
     
-                // Merge the VCard data into the Authentication model
+                // Fetch user_type from the related view_auth_users table
+                $userType = DB::table('view_auth_users')->where('username', $user->username)->value('user_type');
+
+                // Merge the VCard data and user_type into the Authentication model
                 $user->vcard = $vcardData;
+                $user->user_type = $userType;
     
                 // Return the response using a resource
                 return new AuthenticationResource($user);
