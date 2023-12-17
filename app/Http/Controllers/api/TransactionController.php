@@ -47,6 +47,12 @@ class TransactionController extends Controller
         if ($request->input('type') === 'D' && $value > $vcard->balance) {
             return response()->json(['error' => 'Insufficient balance.'], 400);
         }
+
+        // Verifica se o valor é maior que o max_debit da VCard
+        if ($value > $vcard->max_debit) {
+            return response()->json(['error' => 'Value cannot exceed the maximum debit limit for this VCard.'], 400);
+        }
+
         // Check if payment_type is not VCARD
         if ($request->input('payment_type') !== 'VCARD') {
             // Construct the request payload for external service
@@ -124,7 +130,7 @@ class TransactionController extends Controller
                 \Log::info('\n\n\n $receiverVCard: ' . json_encode($receiverVCard));
                 $oldBalance = $receiverVCard->balance;
                 \Log::info('\n Credit OLD BALANCE DATA: ' . json_encode($oldBalance));
-                
+
                 $creditTransaction = Transaction::create($creditTransactionData);
                 // Deduct the value from the sender's balance
                 $receiverVCard->update(['balance' => $receiverVCard->balance + $value]);
@@ -136,7 +142,7 @@ class TransactionController extends Controller
                 ]);
                 \Log::info('\n Credit NEW BALANCE DATA: ' . json_encode($receiverVCard->balance));
                 \Log::info('\n Credit Transaciton (AFTER UPDATE): ' . json_encode($creditTransaction));
-                
+
                 // // Check if piggy_setting is "piggysaves: 1" and the value is not an integer
                 // if ($request->input('custom_options') === 'piggysaves: 1' && (double)$request->input('value') != (int)$request->input('value')) {
                 //     $valueToAddOnPiggyBank = (double)$request->input('value') - (int)$request->input('value');
@@ -161,7 +167,6 @@ class TransactionController extends Controller
 
         //return response()->json(['message' => 'Transactions created successfully', 'debitTransaction' => $debitTransaction, 'creditTransaction' => $creditTransaction], 201);
         return response()->json(['message' => 'Transactions created successfully', 'transaction' => $transaction], 201);
-    
     }
 
     public function storeCreditTransaction(Request $request)
@@ -184,7 +189,7 @@ class TransactionController extends Controller
                 'custom_data' => 'nullable|json',
                 'type' => 'required|in:C', // Credit transaction
             ]);
-        
+
             if ($validator->fails()) {
                 return response()->json(['error' => $validator->errors()], 400);
             }
@@ -192,8 +197,8 @@ class TransactionController extends Controller
             // Find the vCard for the credit transaction
             $vcard = VCard::where('phone_number', $request->input('vcard'))->first();
 
-             // Construct the request payload for external service
-             $externalServicePayload = [
+            // Construct the request payload for external service
+            $externalServicePayload = [
                 'type' => $request->input('payment_type'),
                 'reference' => $request->input('payment_reference'),
                 'value' => $request->input('value'),
@@ -359,4 +364,19 @@ class TransactionController extends Controller
 
         return response()->json(['data' => $phoneNumberTransactions]);
     }
+
+    // public function getPaymentTypes()
+    // {
+    //     $paymentTypes = [
+    //         'VCARD',
+    //         'MBWAY',
+    //         'PAYPAL',
+    //         'IBAN',
+    //         'MB',
+    //         'VISA',
+    //     ];
+
+    //     //return response()->json(['payment_types' => $paymentTypes]);
+    //     return $paymentTypes;
+    // }
 }

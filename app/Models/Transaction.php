@@ -11,7 +11,7 @@ class Transaction extends Model
 
     protected $touches = ['vCard']; // This ensures that the vCard's timestamp is also updated when a related transaction is created
 
-    
+
     protected $fillable = [
         'vcard',
         'date',
@@ -28,7 +28,7 @@ class Transaction extends Model
         'custom_options',
         'custom_data',
     ];
-    
+
     protected static function boot()
     {
         parent::boot();
@@ -54,6 +54,4 @@ class Transaction extends Model
     {
         return $this->belongsTo(Category::class);
     }
-
-
 }
