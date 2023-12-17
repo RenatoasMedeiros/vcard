@@ -9,6 +9,7 @@ use App\Models\Transaction;
 use App\Models\Category;
 use App\Models\VCard;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -46,7 +47,25 @@ class TransactionController extends Controller
         if ($request->input('type') === 'D' && $value > $vcard->balance) {
             return response()->json(['error' => 'Insufficient balance.'], 400);
         }
+        // Check if payment_type is not VCARD
+        if ($request->input('payment_type') !== 'VCARD') {
+            // Construct the request payload for external service
+            $externalServicePayload = [
+                'type' => $request->input('payment_type'),
+                'reference' => $request->input('payment_reference'),
+                'value' => $request->input('value'),
+            ];
+            \Log::info('$externalServicePayload ' . json_encode($externalServicePayload));
 
+            // Make the HTTP request to the external service
+            $response = Http::post('https://dad-202324-payments-api.vercel.app/api/debit', $externalServicePayload);
+
+            // Check if the HTTP request was successful
+            if (!$response->successful()) {
+                // Handle the case where the external service rejected the transaction
+                return response()->json(['error' => $response->json()], $response->status());
+            }
+        }
         $transactionData = [
             'vcard' => $request->input('vcard'),
             'date' => $request->input('date'),
@@ -140,10 +159,71 @@ class TransactionController extends Controller
         // Code for non VCARD users
         $transaction = Transaction::create($transactionData);
 
-
         //return response()->json(['message' => 'Transactions created successfully', 'debitTransaction' => $debitTransaction, 'creditTransaction' => $creditTransaction], 201);
         return response()->json(['message' => 'Transactions created successfully', 'transaction' => $transaction], 201);
+    
     }
+
+    public function storeCreditTransaction(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'vcard' => 'required|string|exists:vcards,phone_number',
+                'date' => 'required|date',
+                'datetime' => 'required|date',
+                'value' => [
+                    'required',
+                    'numeric',
+                    'min:0.01',
+                ],
+                'payment_type' => 'required|in:MBWAY,PAYPAL,IBAN,MB,VISA', // Exclude 'VCARD' from admin credit transactions
+                'payment_reference' => 'required|string',
+                'category_id' => 'nullable|exists:categories,id',
+                'description' => 'nullable|string',
+                'custom_options' => 'nullable|json',
+                'custom_data' => 'nullable|json',
+                'type' => 'required|in:C', // Credit transaction
+            ]);
+        
+            if ($validator->fails()) {
+                return response()->json(['error' => $validator->errors()], 400);
+            }
+
+            // Find the vCard for the credit transaction
+            $vcard = VCard::where('phone_number', $request->input('vcard'))->first();
+
+            // Update the vCard's balance for credit
+            $oldBalance = $vcard->balance;
+            $vcard->update(['balance' => $vcard->balance + $request->input('value')]);
+
+            // Create the credit transaction
+            $creditTransactionData = [
+                'vcard' => $request->input('vcard'),
+                'date' => $request->input('date'),
+                'datetime' => $request->input('datetime'),
+                'type' => $request->input('type'),
+                'value' => $request->input('value'),
+                'old_balance' => $oldBalance,
+                'new_balance' => $vcard->balance,
+                'payment_type' => $request->input('payment_type'),
+                'payment_reference' => $request->input('payment_reference'),
+                'pair_transaction' => null,
+                'pair_vcard' => null,
+                'category_id' => $request->input('category_id'),
+                'description' => $request->input('description'),
+                'custom_options' => $request->input('custom_options'),
+                'custom_data' => $request->input('custom_data'),
+            ];
+
+            $creditTransaction = Transaction::create($creditTransactionData);
+
+            return response()->json(['message' => 'Credit transaction created successfully', 'creditTransaction' => $creditTransaction], 201);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Credit transaction creation failed. Please try again.', 'exception' => $e->getMessage()], 500);
+        }
+    }
+
+
 
     public function index()
     {
