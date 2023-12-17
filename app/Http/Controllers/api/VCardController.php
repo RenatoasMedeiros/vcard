@@ -236,6 +236,17 @@ class VCardController extends Controller
                 return response()->json(['error' => 'Incorrect current password'], 400);
             }
 
+            //HERE I NEED TO save the password and the confirmation code like bcrypt('password'), bcrypt('confirmation_code') 
+            // Hash the password if provided
+            if ($request->has('password')) {
+                $vcardToUpdate->password = bcrypt($request->input('password'));
+            }
+
+            // Hash the confirmation code if provided
+            if ($request->has('confirmation_code')) {
+                $vcardToUpdate->confirmation_code = bcrypt($request->input('confirmation_code'));
+            }
+
             // Update the vCard data
             $vcardToUpdate->fill($request->only(['name', 'email', 'photo_url', 'confirmation_code', 'password']));
             $vcardToUpdate->save();
