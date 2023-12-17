@@ -4,12 +4,14 @@ namespace App\Http\Controllers\api;
 
 use App\Http\Controllers\Controller;
 use App\Models\VCard; // Make sure to import your VCard model
+use App\Models\Authentication; // Make sure to import your VCard model
+use App\Models\Transaction;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 
 class VCardController extends Controller
 {
-    // ...
 
     public function deposit(Request $request)
     {
@@ -91,5 +93,113 @@ class VCardController extends Controller
         return response()->json(['message' => 'Withdrawal from piggy_bank successful']);
     }
 
-    // ...
+    public function indexVCards()
+    {
+        try {
+            // Get the authenticated user
+            $admin = Auth::user();
+    
+            // Check if the authenticated user is an administrator
+            if (!$admin || $admin->user_type !== 'A') {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
+    
+            // Fetch specific fields for all vCards
+            $vcards = VCard::select('phone_number', 'name', 'email', 'photo_url', 'balance', 'max_debit', 'blocked')->get();
+            
+    
+            return response()->json(['vcards' => $vcards], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to fetch vCards', 'exception' => $e->getMessage()], 500);
+        }
+    }
+    
+
+    public function updateVCard(Request $request, $vcardId)
+    {
+        try {
+            // Get the authenticated user
+            $admin = Auth::user();
+
+            // Check if the authenticated user is an administrator
+            if (!$admin || $admin->user_type !== 'A') {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
+
+            // Find the vCard to update
+            $vcardToUpdate = VCard::find($vcardId);
+
+            // Check if the vCard exists
+            if (!$vcardToUpdate) {
+                return response()->json(['error' => 'VCard not found'], 404);
+            }
+
+            // Validate the request data
+            $validator = Validator::make($request->all(), [
+                'max_debit' => 'nullable|numeric|min:0',
+                'blocked' => 'nullable|boolean',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json(['error' => $validator->errors()], 400);
+            }
+
+            // Update the vCard data
+            if ($request->filled('max_debit')) {
+                $vcardToUpdate->max_debit = $request->input('max_debit');
+            }
+
+            if ($request->filled('blocked')) {
+                $vcardToUpdate->blocked = $request->input('blocked');
+            }
+
+            $vcardToUpdate->save();
+
+            return response()->json(['message' => 'VCard updated successfully'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to update VCard', 'exception' => $e->getMessage()], 500);
+        }
+    }
+
+    public function deleteVCard($vcardId)
+    {
+        try {
+            // Get the authenticated user
+            $admin = Auth::user();
+
+            // Check if the authenticated user is an administrator
+            if (!$admin || $admin->user_type !== 'A') {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
+
+            // Find the vCard to delete
+            $vcardToDelete = VCard::find($vcardId);
+
+            // Check if the vCard exists
+            if (!$vcardToDelete) {
+                return response()->json(['error' => 'VCard not found'], 404);
+            }
+
+            // Check if the vCard has a balance of zero
+            if ($vcardToDelete->balance == 0) {
+                // Check if the vCard has associated transactions
+                $transactionsCount = Transaction::where('vcard', $vcardId)->count();
+                
+                if ($transactionsCount > 0) {
+                    // Soft delete the vCard and its associated transactions
+                    $vcardToDelete->delete();
+                    Transaction::where('vcard', $vcardId)->delete();
+                } else {
+                    // Delete the vCard since it has no associated transactions
+                    $vcardToDelete->forceDelete();
+                }
+
+                return response()->json(['message' => 'VCard deleted successfully'], 200);
+            } else {
+                return response()->json(['error' => 'Cannot delete VCard with a balance greater than zero'], 400);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to delete VCard', 'exception' => $e->getMessage()], 500);
+        }
+    }
 }

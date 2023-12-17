@@ -47,10 +47,19 @@ Route::middleware('auth:api')->group(function () {
         Route::post('withdraw', [VCardController::class, 'withdraw']);
     });
     
-    //Admin routes
+    // Administrator routes
     Route::prefix('admin')->group(function () {
         Route::put('profile', [UserController::class, 'profile']);
         Route::post('cTransacion', [TransactionController::class, 'storeCreditTransaction']);
+        Route::get('admins', [UserController::class, 'indexAdmins']);
+        Route::delete('admins/{id}', [UserController::class, 'deleteAdmin']);
+    });
+
+    // VCard routes
+    Route::prefix('vcard')->group(function () {
+        Route::get('vcards', [VCardController::class, 'indexVCards']);
+        Route::put('/{id}', [VCardController::class, 'updateVCard']);
+        Route::delete('/{id}', [VCardController::class, 'deleteVCard']);
     });
 });
 /* 
