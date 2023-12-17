@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use App\Models\VCard;
 use App\Models\User;
 use App\Models\Category;
@@ -75,61 +76,106 @@ class AuthController extends Controller
     }
 
     public function loginPIN(Request $request) {
-        $phone_number = $request->input('username');
-        $pin = $request->input('pin');
+        $authenticatedUser = Auth::user();
+            if($authenticatedUser == $request->user()){
+            $phone_number = $request->input('username');
+            $pin = $request->input('pin');
 
-        \Log::debug('\n\n' . $request);
-    
-        $user = DB::table('view_auth_users')->where('username', $phone_number)->where('pin', $pin)->first();
+            \Log::debug('\n\n' . $request);
         
-        \Log::debug("User found: " . json_encode($user));
+            $user = DB::table('view_auth_users')->where('username', $phone_number)->where('pin', $pin)->first();
+            
+            \Log::debug("User found: " . json_encode($user));
 
-        if ($user) {
-            return response()->json('Login com PIN realizado com sucesso!', 200);
+            if ($user) {
+                return response()->json('Login com PIN realizado com sucesso!', 200);
+            }
         }
-    
-        return response()->json('Authentication with PIN has failed! \n User: ', 401);
+        return response()->json('Authentication with PIN has failed!', 401);
     }
     
 
     public function register(Request $request)
     {
-        $request->validate([
-            'phone_number' => 'required|string|unique:vcards',
-            'password' => 'required|string',
-            'name' => 'required|string',
-            'email' => 'required|email|unique:users',
-            'category_name' => 'required|string',
-            'category_type' => 'required|in:D,C',
-            'pin' => 'required'
-        ]);
+        try{
+            $request->validate([
+                'phone_number' => 'required|string|unique:vcards',
+                'password' => 'required|string',
+                'name' => 'required|string',
+                'email' => 'required|email|unique:users',
+                'category_name' => 'required|string',
+                'category_type' => 'required|in:D,C',
+                'pin' => 'required'
+            ]);
+        
+            // Create a new VCard
+            $vCard = VCard::create([
+                'phone_number' => $request->input('phone_number'),
+                'name' => $request->input('name'),
+                'email' => $request->input('email'),
+                'password' => bcrypt($request->input('password')),
+                'confirmation_code' => bcrypt($request->input('password')),
+                'updated_at' => now(),
+                'max_debit' => '5000',
+                'blocked' => 0,
+                'pin' => $request->input('pin'),
+                'piggy_bank' => '0'
     
-        // Create a new VCard
-        $vCard = VCard::create([
-            'phone_number' => $request->input('phone_number'),
-            'name' => $request->input('name'),
-            'email' => $request->input('email'),
-            'password' => bcrypt($request->input('password')),
-            'confirmation_code' => bcrypt($request->input('password')),
-            'updated_at' => now(),
-            'max_debit' => '5000',
-            'blocked' => 0,
-            'pin' => $request->input('pin'),
-            'piggy_bank' => '0'
+            ]);
+        
+            // Create a new category
+            $category = Category::create([
+                'name' => $request->input('category_name'),
+                'type' => $request->input('category_type'),
+                'vcard' => $request->input('phone_number'),
+            ]);
+        
+            // Associate the category with the VCard
+            $vCard->categories()->save($category);
+        
+            return response()->json(['message' => 'VCard registered successfully'], 201);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Registration failed. Please try again.'], 500);
+        }
+    }
 
-        ]);
-    
-        // Create a new category
-        $category = Category::create([
-            'name' => $request->input('category_name'),
-            'type' => $request->input('category_type'),
-            'vcard' => $request->input('phone_number'),
-        ]);
-    
-        // Associate the category with the VCard
-        $vCard->categories()->save($category);
-    
-        return response()->json(['message' => 'VCard registered successfully']);
+    public function registerAdmin(Request $request)
+    {
+        try {
+            // Log the request headers for debugging
+            \Log::info('Request Headers: ' . json_encode($request->headers->all()));
+
+            // Get the authenticated user
+            $authenticatedUser = Auth::user();
+            \Log::info('$authenticatedUser: ' . json_encode($authenticatedUser));
+            
+            if ($authenticatedUser && $authenticatedUser->user_type === 'A') {
+                $request->validate([
+                    'email' => 'required|email|unique:users',
+                    'name' => 'required|string',
+                    'password' => 'required|string',
+                ]);
+            
+                // Create a new VCard
+                $user = User::create([
+                    'name' => $request->input('name'),
+                    'email' => $request->input('email'),
+                    'password' => bcrypt($request->input('password')),
+                    'remember_token' => Str::random(10),
+                    'email_verified_at' => now(), //alterar depois!
+                    'updated_at' => now(),
+                    'created_at' => now(),
+
+                ]);
+                return response()->json(['message' => 'Admin registered successfully'], 201);
+            }
+        } catch (\Exception $e) {
+           // Log the exception for debugging
+            \Log::error('Exception: ' . $e->getMessage());
+
+            // Return the exception message in the response for debugging
+            return response()->json(['error' => 'Admin Registration failed. Please try again.', 'exception' => $e->getMessage()], 500);
+        }
     }
 
     public function logout(Request $request)
@@ -145,19 +191,23 @@ class AuthController extends Controller
     public function show_me(Request $request)
     {
         try {
-            // Fetch user data from the Authentication model
-            $user = $request->user();
-            \Log::info('\User data: ' . json_encode($user));
-
-            // Fetch additional data for the user from the VCard model
-            $vcardData = VCard::find($user->username);
-            \Log::info('\vcardData data: ' . json_encode($vcardData));
-
-            // Merge the VCard data into the Authentication model
-            $user->vcard = $vcardData;
-
-            // Return the response using a resource
-            return new AuthenticationResource($user);
+            // Get the authenticated user
+            $authenticatedUser = Auth::user();
+            if($authenticatedUser == $request->user()){
+                // Fetch user data from the Authentication model
+                $user = $request->user();
+                \Log::info('\User data: ' . json_encode($user));
+    
+                // Fetch additional data for the user from the VCard model
+                $vcardData = VCard::find($user->username);
+                \Log::info('\vcardData data: ' . json_encode($vcardData));
+    
+                // Merge the VCard data into the Authentication model
+                $user->vcard = $vcardData;
+    
+                // Return the response using a resource
+                return new AuthenticationResource($user);
+            }
         } catch (\Exception $e) {
             return response()->json('Error fetching user data', 500);
         }

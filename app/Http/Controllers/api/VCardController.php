@@ -64,6 +64,7 @@ class VCardController extends Controller
 
         // Get the authenticated user
         $authenticatedUser = Auth::user();
+        \Log::info('$authenticatedUser: ' . json_encode($authenticatedUser));
 
         // Check if the authenticated user matches the specified phone_number
         if ($authenticatedUser->username !== $phone_number) {

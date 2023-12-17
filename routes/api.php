@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\api\AuthController;
 use App\Http\Controllers\api\TransactionController;
+use App\Http\Controllers\api\UserController;
 use App\Http\Controllers\api\VCardController;
 
 /*
@@ -20,11 +21,15 @@ use App\Http\Controllers\api\VCardController;
 Route::post('login', [AuthController::class, 'loginvCard']);
 Route::post('loginAdmin', [AuthController::class, 'loginAdmin']);
 Route::post('register', [AuthController::class, 'register']);
+Route::post('registerAdmin', [AuthController::class, 'registerAdmin']);
+
 
 Route::middleware('auth:api')->group(function () {
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('vcard/me', [AuthController::class, 'show_me']);
     Route::post('/loginPin', [AuthController::class, 'loginPIN']);
+
+    //transactions routes
     Route::prefix('transactions')->group(function () {
         Route::post('/', [TransactionController::class, 'store']);
         Route::get('/', [TransactionController::class, 'index']);
@@ -35,8 +40,18 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/vcard/{vcardPhoneNumber}/phone-number-transactions', [TransactionController::class, 'getPhoneNumberTransactionsForVCard']);
         Route::get('/vcard/{vcardPhoneNumber}/recent-transactions', [TransactionController::class, 'getRecentTransactions']);
     });
-    Route::post('/piggyBank/deposit', [VCardController::class, 'deposit']);
-    Route::post('/piggyBank/withdraw', [VCardController::class, 'withdraw']);
+
+    //PiggyBank routes
+    Route::prefix('piggyBank')->group(function () {
+        Route::post('deposit', [VCardController::class, 'deposit']);
+        Route::post('withdraw', [VCardController::class, 'withdraw']);
+    });
+    
+    //Admin routes
+    Route::prefix('admin')->group(function () {
+        Route::put('profile', [UserController::class, 'profile']);
+        Route::post('cTransacion', [TransactionController::class, 'storeCreditTransaction']);
+    });
 });
 /* 
 Route::prefix('transactions')->group(function () {
