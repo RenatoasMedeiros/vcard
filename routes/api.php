@@ -53,13 +53,14 @@ Route::middleware('auth:api')->group(function () {
         Route::post('cTransacion', [TransactionController::class, 'storeCreditTransaction']);
         Route::get('admins', [UserController::class, 'indexAdmins']);
         Route::delete('admins/{id}', [UserController::class, 'deleteAdmin']);
+        Route::put('updatevCard/{id}', [VCardController::class, 'adminUpdateVCard']);
     });
 
     // VCard routes
     Route::prefix('vcard')->group(function () {
         Route::get('vcards', [VCardController::class, 'indexVCards']);
-        Route::put('/{id}', [VCardController::class, 'updateVCard']);
         Route::delete('/{id}', [VCardController::class, 'deleteVCard']);
+        Route::put('/', [VCardController::class, 'updateProfile']);
     });
 });
 /* 
