@@ -192,6 +192,22 @@ class TransactionController extends Controller
             // Find the vCard for the credit transaction
             $vcard = VCard::where('phone_number', $request->input('vcard'))->first();
 
+             // Construct the request payload for external service
+             $externalServicePayload = [
+                'type' => $request->input('payment_type'),
+                'reference' => $request->input('payment_reference'),
+                'value' => $request->input('value'),
+            ];
+
+            // Make the HTTP request to the external service
+            $response = Http::post('https://dad-202324-payments-api.vercel.app/api/debit', $externalServicePayload);
+
+            // Check if the HTTP request was successful
+            if (!$response->successful()) {
+                // Handle the case where the external service rejected the transaction
+                return response()->json(['error' => $response->json()], $response->status());
+            }
+
             // Update the vCard's balance for credit
             $oldBalance = $vcard->balance;
             $vcard->update(['balance' => $vcard->balance + $request->input('value')]);
