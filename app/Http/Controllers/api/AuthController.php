@@ -133,7 +133,7 @@ class AuthController extends Controller
         
             return response()->json(['message' => 'VCard registered successfully'], 201);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Registration failed. Please try again.'], 500);
+            return response()->json(['error' => 'Registration failed. Please try again.','exception' => $e->getMessage()], 500);
         }
     }
 
@@ -154,7 +154,7 @@ class AuthController extends Controller
                     'password' => 'required|string',
                 ]);
             
-                // Create a new VCard
+                // Create a new Admin
                 $user = User::create([
                     'name' => $request->input('name'),
                     'email' => $request->input('email'),

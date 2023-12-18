@@ -243,11 +243,14 @@ class TransactionController extends Controller
     
     }
 
+    // admin/cTransaction
     public function storeCreditTransaction(Request $request)
     {
         try {
+
             $validator = Validator::make($request->all(), [
                 'vcard' => 'required|string|exists:vcards,phone_number',
+                //'vcard' => 'required|string',
                 'date' => 'required|date',
                 'datetime' => 'required|date',
                 'value' => [
@@ -263,20 +266,49 @@ class TransactionController extends Controller
                 'custom_data' => 'nullable|json',
                 'type' => 'required|in:C', // Credit transaction
             ]);
-        
+
             if ($validator->fails()) {
                 return response()->json(['error' => $validator->errors()], 400);
             }
 
-            // Find the vCard for the credit transaction
-            $vcard = VCard::where('phone_number', $request->input('vcard'))->first();
+            // Ensure that the payment_type is not 'VCARD' for admin credit transactions
+            if ($request->input('payment_type') === 'VCARD') {
+                return response()->json(['error' => 'Invalid payment type for admin credit transactions'], 400);
+            }
+            
+            // Initialize vCard and oldBalance
+            $vcard = null;
+            $oldBalance = 0;
 
-             // Construct the request payload for external service
-             $externalServicePayload = [
+            $vcard = VCard::where('phone_number', $request->input('vcard'))->first();
+            \Log::info('$vcard: ' . json_encode($vcard));
+            \Log::info('$request->input(vcard): ' . json_encode($request->input('vcard')));
+            \Log::info('!$vcard ' . json_encode(!$vcard));
+
+            // // If payment_type is MBWAY, find vCard based on phone number
+            // if ($request->input('payment_type') === 'MBWAY') {
+            // }
+
+            // // Handle other payment types here (IBAN, PAYPAL, MB, VISA)
+            // // If payment type is not MBWAY, use phone_number_receiver to find the vCard
+            // if (in_array($request->input('payment_type'), ['IBAN', 'PAYPAL', 'MB', 'VISA'])) {
+            //     $vcard = VCard::where('phone_number', $request->input('vcard'))->first();
+            // }
+
+            // Check if vCard was found
+            if (!$vcard) {
+                return response()->json(['error' => 'VCard not found for the provided payment reference or phone number'], 404);
+            }
+            
+            
+            // Construct the request payload for external service
+            $externalServicePayload = [
                 'type' => $request->input('payment_type'),
                 'reference' => $request->input('payment_reference'),
                 'value' => $request->input('value'),
             ];
+            
+            \Log::info('$externalServicePayload: ' . json_encode($externalServicePayload));
 
             // Make the HTTP request to the external service
             $response = Http::post('https://dad-202324-payments-api.vercel.app/api/debit', $externalServicePayload);
