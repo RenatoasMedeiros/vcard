@@ -116,7 +116,7 @@ class VCardController extends Controller
     }
     
 
-    public function updateVCard(Request $request, $vcardId)
+    public function adminUpdateVCard(Request $request, $vcardId)
     {
         try {
             // Get the authenticated user
@@ -275,5 +275,61 @@ class VCardController extends Controller
         } catch (\Exception $e) {
             return response()->json(['error' => 'Failed to delete VCard', 'exception' => $e->getMessage()], 500);
         }
+    }   
+
+    public function updateProfile(Request $request)
+    {
+        try {
+            // Get the authenticated user
+            $authenticatedUser = Auth::user();
+
+            // Find the vCard to update
+            $vcardToUpdate = VCard::find($authenticatedUser->username);
+
+            // Check if the vCard exists
+            if (!$vcardToUpdate) {
+                return response()->json(['error' => 'VCard not found'], 404);
+            }
+
+            // Validate the request data
+            $validator = Validator::make($request->all(), [
+                'name' => 'nullable|string',
+                'email' => 'nullable|email|unique:vcards,email,' . $vcardToUpdate->phone_number . ',phone_number',
+                'photo_url' => 'nullable|url',
+                'confirmation_code' => 'nullable|string',
+                'password' => 'nullable|string',
+                'current_password' => 'required|string', // Add this field for password confirmation
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json(['error' => $validator->errors()], 400);
+            }
+
+            // Verify the current password
+            if (!password_verify($request->input('current_password'), $vcardToUpdate->password)) {
+                return response()->json(['error' => 'Incorrect current password'], 400);
+            }
+
+            //HERE I NEED TO save the password and the confirmation code like bcrypt('password'), bcrypt('confirmation_code') 
+            // Hash the password if provided
+            if ($request->has('password')) {
+                $vcardToUpdate->password = bcrypt($request->input('password'));
+            }
+
+            // Hash the confirmation code if provided
+            if ($request->has('confirmation_code')) {
+                $vcardToUpdate->confirmation_code = bcrypt($request->input('confirmation_code'));
+            }
+
+            // Update the vCard data
+            $vcardToUpdate->fill($request->only(['name', 'email', 'photo_url', 'confirmation_code', 'password']));
+            $vcardToUpdate->save();
+
+            return response()->json(['message' => 'Profile updated successfully'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to update profile', 'exception' => $e->getMessage()], 500);
+        }
     }
+
+    
 }

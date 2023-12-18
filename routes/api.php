@@ -6,6 +6,7 @@ use App\Http\Controllers\api\AuthController;
 use App\Http\Controllers\api\TransactionController;
 use App\Http\Controllers\api\UserController;
 use App\Http\Controllers\api\VCardController;
+use App\Http\Controllers\api\CategoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -63,7 +64,14 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/{id}', [VCardController::class, 'adminFindVcard']);
         Route::put('/{id}', [VCardController::class, 'updateVCard']);
         Route::delete('/{id}', [VCardController::class, 'deleteVCard']);
+        Route::put('/', [VCardController::class, 'updateProfile']);
     });
+
+    Route::prefix('category')->group(function () {
+    Route::get('/{vcardId}', [CategoryController::class, 'indexCategories']);
+    Route::put('/{vcardId}', [CategoryController::class, 'updateCategory']);
+    });
+
 });
 /* 
 Route::prefix('transactions')->group(function () {

@@ -38,8 +38,7 @@ return new class extends Migration
             $table->string('password');
             $table->string('confirmation_code');
 
-            //TAES - PIN | PIGGYBANK
-            $table->string('pin');
+            //PIGGYBANK
             $table->decimal('piggy_bank', 9, 2)->default(0);
 
             // vCard valid date and status
