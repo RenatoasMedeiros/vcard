@@ -140,6 +140,12 @@ class TransactionController extends Controller
         if ($request->input('type') === 'D' && $value > $vcard->balance) {
             return response()->json(['error' => 'Insufficient balance.'], 400);
         }
+
+        // Verifica se o valor é maior que o max_debit da VCard
+        if ($value > $vcard->max_debit) {
+            return response()->json(['error' => 'Value cannot exceed the maximum debit limit for this VCard.'], 400);
+        }
+
         // Check if payment_type is not VCARD
         if ($request->input('payment_type') !== 'VCARD') {
             \Log::info('Entrou aqui porque é diferente de VCARD');
@@ -219,7 +225,7 @@ class TransactionController extends Controller
                 \Log::info('\n\n\n $receiverVCard: ' . json_encode($receiverVCard));
                 $oldBalance = $receiverVCard->balance;
                 \Log::info('\n Credit OLD BALANCE DATA: ' . json_encode($oldBalance));
-                
+
                 $creditTransaction = Transaction::create($creditTransactionData);
                 // Deduct the value from the sender's balance
                 $receiverVCard->update(['balance' => $receiverVCard->balance + $value]);
@@ -231,7 +237,6 @@ class TransactionController extends Controller
                 ]);
                 \Log::info('\n Credit NEW BALANCE DATA: ' . json_encode($receiverVCard->balance));
                 \Log::info('\n Credit Transaciton (AFTER UPDATE): ' . json_encode($creditTransaction));
-
             }
             return response()->json(['message' => 'Transactions created successfully (to a VCARD user)', 'debitTransaction' => $debitTransaction], 201);
         }
@@ -240,7 +245,6 @@ class TransactionController extends Controller
 
         //return response()->json(['message' => 'Transactions created successfully', 'debitTransaction' => $debitTransaction, 'creditTransaction' => $creditTransaction], 201);
         return response()->json(['message' => 'Transactions created successfully', 'transaction' => $transaction], 201);
-    
     }
 
     // admin/cTransaction
@@ -280,6 +284,7 @@ class TransactionController extends Controller
             $vcard = null;
             $oldBalance = 0;
 
+
             $vcard = VCard::where('phone_number', $request->input('vcard'))->first();
             \Log::info('$vcard: ' . json_encode($vcard));
             \Log::info('$request->input(vcard): ' . json_encode($request->input('vcard')));
@@ -299,8 +304,7 @@ class TransactionController extends Controller
             if (!$vcard) {
                 return response()->json(['error' => 'VCard not found for the provided payment reference or phone number'], 404);
             }
-            
-            
+
             // Construct the request payload for external service
             $externalServicePayload = [
                 'type' => $request->input('payment_type'),
@@ -397,7 +401,22 @@ class TransactionController extends Controller
 
         // Retrieve paginated transactions associated with the vCard
         $transactions = Transaction::where('vcard', $vcardPhoneNumber)
-            ->paginate(10);
+            ->paginate(99);
+
+        // Get the associated vCard name for each transaction
+        $transactions = $transactions->map(function ($transaction) {
+            // Find the vCard with the payment_reference
+            $associatedVCard = VCard::where('phone_number', $transaction->payment_reference)->first();
+
+            // If found, add the 'associatedVCard' field to the transaction
+            if ($associatedVCard) {
+                $transaction->associatedVCard = $associatedVCard->name;
+            } else {
+                $transaction->associatedVCard = null;
+            }
+
+            return $transaction;
+        });
 
         return response()->json(['data' => $transactions]);
     }
@@ -470,4 +489,6 @@ class TransactionController extends Controller
 
         return response()->json(['data' => $phoneNumberTransactions]);
     }
+
+
 }
