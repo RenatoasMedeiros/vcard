@@ -25,6 +25,7 @@ class TransactionController extends Controller
                 'required',
                 'numeric',
                 'min:0.01',
+                'max:100000', // Maximum value constraint
             ],
             'payment_type' => 'required|in:VCARD,MBWAY,PAYPAL,IBAN,MB,VISA',
             'payment_reference' => 'required|string',
@@ -37,8 +38,100 @@ class TransactionController extends Controller
 
         ]);
 
+        //  // Additional validation for type, reference, and value
+        // if ($validator->passes()) {
+        //     switch ($request->input('payment_type')) {
+        //         case 'MBWAY':
+        //             $validator->sometimes('payment_reference', 'regex:/^9\d{8}$/', function ($input) {
+        //                 return $input->payment_type === 'MBWAY';
+        //             });
+        //             break;
+        //         case 'PAYPAL':
+        //             $validator->sometimes('payment_reference', 'email', function ($input) {
+        //                 return $input->payment_type === 'PAYPAL';
+        //             });
+        //             break;
+        //         case 'IBAN':
+        //             $validator->sometimes('payment_reference', 'regex:/^[A-Z]{2}\d{23}$/', function ($input) {
+        //                 return $input->payment_type === 'IBAN';
+        //             });
+        //             break;
+        //         case 'MB':
+        //             $validator->sometimes('payment_reference', 'regex:/^\d{5}-\d{9}$/', function ($input) {
+        //                 return $input->payment_type === 'MB';
+        //             });
+        //             break;
+        //         case 'VISA':
+        //             $validator->sometimes('payment_reference', 'regex:/^4\d{15}$/', function ($input) {
+        //                 return $input->payment_type === 'VISA';
+        //             });
+        //             break;
+        //     }
+        // }
+
         if ($validator->fails()) {
             return response()->json(['error' => $validator->errors()], 400);
+        }
+
+        \Log::info('Request Payload: ' . json_encode($request->all()));
+
+        // Additional simulation rules
+        $reference = $request->input('payment_reference');
+        $value = round($request->input('value'), 2);
+
+        switch ($request->input('payment_type')) {
+            case 'MBWAY':
+                if (strpos($reference, '9') !== 0) {
+                    \Log::info('Invalid MBWAY Reference Detected');
+                    \Log::info('Reference: ' . $reference);
+                    return response()->json(['error' => 'Invalid MBWAY reference'], 400);
+                }
+                
+                // Check for maximum value
+                if ($value > 50) {
+                    return response()->json(['error' => 'MBWAY transaction amount exceeds the limit'], 400);
+                }
+                break;
+
+            case 'PAYPAL':
+                if (strpos($reference, 'xx') === 0) {
+                    return response()->json(['error' => 'Invalid PAYPAL reference'], 400);
+                }
+                // Check for maximum value
+                if ($value > 100) {
+                    return response()->json(['error' => 'PAYPAL transaction amount exceeds the limit'], 400);
+                }
+                break;
+
+            case 'IBAN':
+                if (strpos($reference, 'XX') === 0) {
+                    return response()->json(['error' => 'Invalid IBAN reference'], 400);
+                }
+                // Check for maximum value
+                if ($value > 1000) {
+                    return response()->json(['error' => 'IBAN transaction amount exceeds the limit'], 400);
+                }
+                break;
+
+            case 'MB':
+                if (strpos($reference, '9') === 0) {
+                    return response()->json(['error' => 'Invalid MB reference'], 400);
+                }
+                // Check for maximum value
+                if ($value > 500) {
+                    return response()->json(['error' => 'MB transaction amount exceeds the limit'], 400);
+                }
+                break;
+
+            case 'VISA':
+                if (strpos($reference, '40') === 0) {
+                    return response()->json(['error' => 'Invalid VISA reference'], 400);
+                }
+                // Check for maximum value
+                if ($value > 200) {
+                    return response()->json(['error' => 'VISA transaction amount exceeds the limit'], 400);
+                }
+                break;
         }
 
         // Balance verification
@@ -49,6 +142,7 @@ class TransactionController extends Controller
         }
         // Check if payment_type is not VCARD
         if ($request->input('payment_type') !== 'VCARD') {
+            \Log::info('Entrou aqui porque é diferente de VCARD');
             // Construct the request payload for external service
             $externalServicePayload = [
                 'type' => $request->input('payment_type'),
@@ -59,7 +153,8 @@ class TransactionController extends Controller
 
             // Make the HTTP request to the external service
             $response = Http::post('https://dad-202324-payments-api.vercel.app/api/debit', $externalServicePayload);
-
+        
+            \Log::info('$response->successful() ' . json_encode($response->successful()));
             // Check if the HTTP request was successful
             if (!$response->successful()) {
                 // Handle the case where the external service rejected the transaction
@@ -108,10 +203,10 @@ class TransactionController extends Controller
             //Here
             //if ($hasPair_vcard == "null") $hasPair_vcard = 0;
 
-            \Log::info('\n Has a pair_card: ' . json_encode($hasPair_vcard));
+            \Log::info('\n Has a pair_card? -> ' . json_encode($hasPair_vcard));
 
             // If there is a paired vCard, create the credit transaction (destination VCard)
-            if ($hasPair_vcard) {
+            if ($hasPair_vcard && !empty($request->input('pair_vcard'))) {
                 \Log::info('\n Has a pair_card: ' . json_encode($hasPair_vcard));
                 $creditTransactionData = $transactionData;
                 //$creditTransactionData['vcard'] = $request->input('pair_vcard');
@@ -136,22 +231,6 @@ class TransactionController extends Controller
                 ]);
                 \Log::info('\n Credit NEW BALANCE DATA: ' . json_encode($receiverVCard->balance));
                 \Log::info('\n Credit Transaciton (AFTER UPDATE): ' . json_encode($creditTransaction));
-                
-                // // Check if piggy_setting is "piggysaves: 1" and the value is not an integer
-                // if ($request->input('custom_options') === 'piggysaves: 1' && (double)$request->input('value') != (int)$request->input('value')) {
-                //     $valueToAddOnPiggyBank = (double)$request->input('value') - (int)$request->input('value');
-                //     \Log::info('\n $valueToAddOnPiggyBank : ' . json_encode($valueToAddOnPiggyBank));
-                //     \Log::info('\n $valueToAddOnPiggyBank : ' . $valueToAddOnPiggyBank);
-
-                //     $vCardController = app(VCardController::class);
-
-                //     $result = $vCardController->deposit($request->merge([
-                //         'amount' => $valueToAddOnPiggyBank,
-                //         'phone_number' => $request->input('pair_vcard'),
-                //     ]));
-                //     \Log::info('\n Result of the piggy bank transaction : ' . json_encode($result));
-                //     \Log::info('\n Result of the piggy bank transaction : ' . $result);
-                // }
 
             }
             return response()->json(['message' => 'Transactions created successfully (to a VCARD user)', 'debitTransaction' => $debitTransaction], 201);

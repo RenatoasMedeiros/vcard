@@ -55,6 +55,7 @@ Route::middleware('auth:api')->group(function () {
         Route::get('admins', [UserController::class, 'indexAdmins']);
         Route::delete('admins/{id}', [UserController::class, 'deleteAdmin']);
         Route::put('updatevCard/{id}', [VCardController::class, 'adminUpdateVCard']);
+        Route::put('updatevCard/{id}', [VCardController::class, 'adminUpdateVCard']);
     });
 
     // VCard routes

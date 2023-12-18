@@ -201,7 +201,7 @@ class VCardController extends Controller
         } catch (\Exception $e) {
             return response()->json(['error' => 'Failed to delete VCard', 'exception' => $e->getMessage()], 500);
         }
-    }
+    }   
 
     public function updateProfile(Request $request)
     {
