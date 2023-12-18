@@ -121,7 +121,7 @@ class VCardsTableSeeder extends Seeder
         $gender = "";
         UsersTableSeeder::randomName($faker, $gender, $fullname, $email);
         do {
-            $phoneNumber = '900000000';
+            $phoneNumber = '910000000';
             if ($fixedPhone > 0) {
                 $phoneNumber += $fixedPhone;
             } else {

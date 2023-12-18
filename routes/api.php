@@ -21,7 +21,7 @@ use App\Http\Controllers\api\VCardController;
 Route::post('login', [AuthController::class, 'loginvCard']);
 Route::post('loginAdmin', [AuthController::class, 'loginAdmin']);
 Route::post('register', [AuthController::class, 'register']);
-Route::post('registerAdmin', [AuthController::class, 'registerAdmin']);
+
 
 
 Route::middleware('auth:api')->group(function () {
@@ -50,9 +50,11 @@ Route::middleware('auth:api')->group(function () {
     // Administrator routes
     Route::prefix('admin')->group(function () {
         Route::put('profile', [UserController::class, 'profile']);
-        Route::post('cTransacion', [TransactionController::class, 'storeCreditTransaction']);
+        Route::post('cTransaction', [TransactionController::class, 'storeCreditTransaction']);
         Route::get('admins', [UserController::class, 'indexAdmins']);
         Route::delete('admins/{id}', [UserController::class, 'deleteAdmin']);
+        Route::put('updatevCard/{id}', [VCardController::class, 'adminUpdateVCard']);
+        Route::post('registerAdmin', [AuthController::class, 'registerAdmin']);
     });
 
     // VCard routes

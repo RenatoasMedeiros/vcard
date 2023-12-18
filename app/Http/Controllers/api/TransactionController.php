@@ -164,9 +164,11 @@ class TransactionController extends Controller
     
     }
 
+    // admin/cTransaction
     public function storeCreditTransaction(Request $request)
     {
         try {
+
             $validator = Validator::make($request->all(), [
                 'vcard' => 'required|string|exists:vcards,phone_number',
                 'date' => 'required|date',
@@ -184,7 +186,7 @@ class TransactionController extends Controller
                 'custom_data' => 'nullable|json',
                 'type' => 'required|in:C', // Credit transaction
             ]);
-        
+
             if ($validator->fails()) {
                 return response()->json(['error' => $validator->errors()], 400);
             }
