@@ -11,7 +11,6 @@ class Transaction extends Model
 
     protected $touches = ['vCard']; // This ensures that the vCard's timestamp is also updated when a related transaction is created
 
-
     protected $fillable = [
         'vcard',
         'date',

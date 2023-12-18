@@ -291,7 +291,22 @@ class TransactionController extends Controller
 
         // Retrieve paginated transactions associated with the vCard
         $transactions = Transaction::where('vcard', $vcardPhoneNumber)
-            ->paginate(10);
+            ->paginate(99);
+
+        // Get the associated vCard name for each transaction
+        $transactions = $transactions->map(function ($transaction) {
+            // Find the vCard with the payment_reference
+            $associatedVCard = VCard::where('phone_number', $transaction->payment_reference)->first();
+
+            // If found, add the 'associatedVCard' field to the transaction
+            if ($associatedVCard) {
+                $transaction->associatedVCard = $associatedVCard->name;
+            } else {
+                $transaction->associatedVCard = null;
+            }
+
+            return $transaction;
+        });
 
         return response()->json(['data' => $transactions]);
     }
