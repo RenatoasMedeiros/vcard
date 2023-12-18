@@ -28,7 +28,8 @@ class AuthenticationResource extends JsonResource
             'max_debit' => optional($this->vcard)->max_debit, // Access the max_debit from the vcard relationship
             'piggy_bank' => optional($this->vcard)->piggy_bank, // Access the piggy_bank from the vcard relationship
             'custom_options' => optional($this->vcard)->custom_options,
-            'custom_data' => optional($this->vcard)->custom_data
+            'custom_data' => optional($this->vcard)->custom_data,
+            'user_type' =>  $this->user_type
         ];
     }
 }

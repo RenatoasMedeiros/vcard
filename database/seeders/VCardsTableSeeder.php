@@ -121,7 +121,7 @@ class VCardsTableSeeder extends Seeder
         $gender = "";
         UsersTableSeeder::randomName($faker, $gender, $fullname, $email);
         do {
-            $phoneNumber = '900000000';
+            $phoneNumber = '910000000';
             if ($fixedPhone > 0) {
                 $phoneNumber += $fixedPhone;
             } else {
@@ -146,9 +146,7 @@ class VCardsTableSeeder extends Seeder
             'email' => $email,
             'photo_url' => $gender,
             'password' => bcrypt('123'),
-            'confirmation_code' => bcrypt('123'),
-            //TAES - PIN PIGGYBANK
-            'pin' => '1234',
+            'confirmation_code' => bcrypt('1234'),
             'piggy_bank' => 0,
             'blocked' => $blocked,
             'balance' => 0,

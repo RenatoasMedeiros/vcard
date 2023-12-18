@@ -6,6 +6,7 @@ use App\Http\Controllers\api\AuthController;
 use App\Http\Controllers\api\TransactionController;
 use App\Http\Controllers\api\UserController;
 use App\Http\Controllers\api\VCardController;
+use App\Http\Controllers\api\CategoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -21,7 +22,7 @@ use App\Http\Controllers\api\VCardController;
 Route::post('login', [AuthController::class, 'loginvCard']);
 Route::post('loginAdmin', [AuthController::class, 'loginAdmin']);
 Route::post('register', [AuthController::class, 'register']);
-Route::post('registerAdmin', [AuthController::class, 'registerAdmin']);
+
 
 
 Route::middleware('auth:api')->group(function () {
@@ -50,11 +51,30 @@ Route::middleware('auth:api')->group(function () {
         Route::post('withdraw', [VCardController::class, 'withdraw']);
     });
     
-    //Admin routes
+    // Administrator routes
     Route::prefix('admin')->group(function () {
+        Route::get('admins', [UserController::class, 'indexAdmins']);
         Route::put('profile', [UserController::class, 'profile']);
-        Route::post('cTransacion', [TransactionController::class, 'storeCreditTransaction']);
+        Route::post('cTransaction', [TransactionController::class, 'storeCreditTransaction']);
+        Route::delete('admins/{id}', [UserController::class, 'deleteAdmin']);
+        Route::put('updatevCard/{id}', [VCardController::class, 'adminUpdateVCard']);
+        Route::post('registerAdmin', [AuthController::class, 'registerAdmin']);
     });
+
+    // VCard routes
+    Route::prefix('vcard')->group(function () {
+        Route::get('vcards', [VCardController::class, 'indexVCards']);
+        Route::get('/{id}', [VCardController::class, 'adminFindVcard']);
+        Route::put('/{id}', [VCardController::class, 'updateVCard']);
+        Route::delete('/{id}', [VCardController::class, 'deleteVCard']);
+        Route::put('/', [VCardController::class, 'updateProfile']);
+    });
+
+    Route::prefix('category')->group(function () {
+    Route::get('/{vcardId}', [CategoryController::class, 'indexCategories']);
+    Route::put('/{vcardId}', [CategoryController::class, 'updateCategory']);
+    });
+
 });
 /* 
 Route::prefix('transactions')->group(function () {

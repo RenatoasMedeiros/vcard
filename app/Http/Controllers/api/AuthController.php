@@ -79,19 +79,19 @@ class AuthController extends Controller
         $authenticatedUser = Auth::user();
             if($authenticatedUser == $request->user()){
             $phone_number = $request->input('username');
-            $pin = $request->input('pin');
+            $confirmation_code = $request->input('confirmation_code');
 
             \Log::debug('\n\n' . $request);
         
-            $user = DB::table('view_auth_users')->where('username', $phone_number)->where('pin', $pin)->first();
+            $user = DB::table('view_auth_users')->where('username', $phone_number)->where('confirmation_code', $confirmation_code)->first();
             
             \Log::debug("User found: " . json_encode($user));
 
             if ($user) {
-                return response()->json('Login com PIN realizado com sucesso!', 200);
+                return response()->json('Login com codigo de confirmação realizado com sucesso!', 200);
             }
         }
-        return response()->json('Authentication with PIN has failed!', 401);
+        return response()->json('Authentication with confirmation code has failed!', 401);
     }
     
 
@@ -99,28 +99,26 @@ class AuthController extends Controller
     {
         try{
             $request->validate([
-                'phone_number' => 'required|string|unique:vcards',
+                'phone_number' => 'required|string|regex:/^9[0-9]{8}$/|unique:vcards',
                 'password' => 'required|string',
                 'name' => 'required|string',
-                'email' => 'required|email|unique:users',
+                'email' => 'required|email|unique:vcards',
                 'category_name' => 'required|string',
                 'category_type' => 'required|in:D,C',
-                'pin' => 'required'
+                'confirmation_code' => 'required|string'
             ]);
-        
+
             // Create a new VCard
             $vCard = VCard::create([
                 'phone_number' => $request->input('phone_number'),
                 'name' => $request->input('name'),
                 'email' => $request->input('email'),
                 'password' => bcrypt($request->input('password')),
-                'confirmation_code' => bcrypt($request->input('password')),
+                'confirmation_code' => bcrypt($request->input('confirmation_code')),
                 'updated_at' => now(),
                 'max_debit' => '5000',
                 'blocked' => 0,
-                'pin' => $request->input('pin'),
                 'piggy_bank' => '0'
-    
             ]);
         
             // Create a new category
@@ -135,7 +133,7 @@ class AuthController extends Controller
         
             return response()->json(['message' => 'VCard registered successfully'], 201);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Registration failed. Please try again.'], 500);
+            return response()->json(['error' => 'Registration failed. Please try again.','exception' => $e->getMessage()], 500);
         }
     }
 
@@ -156,7 +154,7 @@ class AuthController extends Controller
                     'password' => 'required|string',
                 ]);
             
-                // Create a new VCard
+                // Create a new Admin
                 $user = User::create([
                     'name' => $request->input('name'),
                     'email' => $request->input('email'),
@@ -202,8 +200,12 @@ class AuthController extends Controller
                 $vcardData = VCard::find($user->username);
                 \Log::info('\vcardData data: ' . json_encode($vcardData));
     
-                // Merge the VCard data into the Authentication model
+                // Fetch user_type from the related view_auth_users table
+                $userType = DB::table('view_auth_users')->where('username', $user->username)->value('user_type');
+
+                // Merge the VCard data and user_type into the Authentication model
                 $user->vcard = $vcardData;
+                $user->user_type = $userType;
     
                 // Return the response using a resource
                 return new AuthenticationResource($user);
