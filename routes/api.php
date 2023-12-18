@@ -49,9 +49,9 @@ Route::middleware('auth:api')->group(function () {
     
     // Administrator routes
     Route::prefix('admin')->group(function () {
+        Route::get('admins', [UserController::class, 'indexAdmins']);
         Route::put('profile', [UserController::class, 'profile']);
         Route::post('cTransaction', [TransactionController::class, 'storeCreditTransaction']);
-        Route::get('admins', [UserController::class, 'indexAdmins']);
         Route::delete('admins/{id}', [UserController::class, 'deleteAdmin']);
         Route::put('updatevCard/{id}', [VCardController::class, 'adminUpdateVCard']);
         Route::post('registerAdmin', [AuthController::class, 'registerAdmin']);
@@ -60,6 +60,7 @@ Route::middleware('auth:api')->group(function () {
     // VCard routes
     Route::prefix('vcard')->group(function () {
         Route::get('vcards', [VCardController::class, 'indexVCards']);
+        Route::get('/{id}', [VCardController::class, 'adminFindVcard']);
         Route::put('/{id}', [VCardController::class, 'updateVCard']);
         Route::delete('/{id}', [VCardController::class, 'deleteVCard']);
     });

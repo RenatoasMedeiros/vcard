@@ -9,6 +9,7 @@ use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Resources\VCardResource;
 
 class VCardController extends Controller
 {
@@ -156,6 +157,79 @@ class VCardController extends Controller
             $vcardToUpdate->save();
 
             return response()->json(['message' => 'VCard updated successfully'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to update VCard', 'exception' => $e->getMessage()], 500);
+        }
+    }
+
+    public function adminUpdateVCard(Request $request, $vcardId)
+    {
+        try {
+            // Get the authenticated user
+            $admin = Auth::user();
+
+            // Check if the authenticated user is an administrator
+            if (!$admin || $admin->user_type !== 'A') {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
+
+            // Find the vCard to update
+            $vcardToUpdate = VCard::find($vcardId);
+
+            // Check if the vCard exists
+            if (!$vcardToUpdate) {
+                return response()->json(['error' => 'VCard not found'], 404);
+            }
+
+            // Validate the request data
+            $validator = Validator::make($request->all(), [
+                'max_debit' => 'nullable|numeric|min:0',
+                'blocked' => 'nullable|boolean',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json(['error' => $validator->errors()], 400);
+            }
+
+            // Update the vCard data
+            if ($request->filled('max_debit')) {
+                $vcardToUpdate->max_debit = $request->input('max_debit');
+            }
+
+            if ($request->filled('blocked')) {
+                $vcardToUpdate->blocked = $request->input('blocked');
+            }
+
+            $vcardToUpdate->save();
+
+            return response()->json(['message' => 'VCard updated successfully'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to update VCard', 'exception' => $e->getMessage()], 500);
+        }
+    }
+
+    public function adminFindVcard(Request $request, $vcardId)
+    {
+        try {
+            // Get the authenticated user
+            $admin = Auth::user();
+
+            // Check if the authenticated user is an administrator
+            if (!$admin || $admin->user_type !== 'A') {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
+
+            // Find the vCard 
+            $vcardToFind = VCard::find($vcardId);
+            
+            // Check if the vCard exists
+            if (!$vcardToFind) {
+                return response()->json(['error' => 'VCard not found'], 404);
+            }
+            \Log::info('Vcard found: ' . json_encode($vcardToFind));
+
+            // Return the response using a resource
+            return new VCardResource($vcardToFind);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Failed to update VCard', 'exception' => $e->getMessage()], 500);
         }
